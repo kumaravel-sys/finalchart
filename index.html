@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Trainer — Live NSE Chart + Info</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f7fb; margin: 0; }
+    header { background: #111827; color: white; text-align: center; padding: 15px; }
+    main { max-width: 1000px; margin: 20px auto; padding: 0 16px; }
+    .search { display: flex; gap: 10px; margin-bottom: 20px; }
+    input { flex: 1; padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; }
+    button { padding: 10px 15px; border: none; background: #111827; color: white; border-radius: 8px; cursor: pointer; }
+    button:hover { background: #1f2937; }
+    iframe { width: 100%; height: 500px; border: none; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+    .info { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+    .info h2 { margin-top: 0; }
+    footer { text-align: center; color: #777; font-size: 13px; margin-top: 15px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📈 Live NSE Stock Trainer</h1>
+</header>
+
+<main>
+  <div class="search">
+    <input type="text" id="symbolInput" placeholder="Enter symbol (e.g. NSE:RELIANCE)" />
+    <button id="loadBtn">Load Stock</button>
+    <button id="demoBtn" style="background:#047857;">Demo (NSE:RELIANCE)</button>
+  </div>
+
+  <div id="chartContainer">
+    <!-- Chart iframe will appear here -->
+  </div>
+
+  <div class="info">
+    <h2>Company Info</h2>
+    <div id="infoContent">Search for an Indian NSE stock like NSE:TCS or NSE:INFY</div>
+  </div>
+</main>
+
+<footer>Made with ❤️ for Indian markets — uses TradingView & Twelve Data</footer>
+
+<script>
+const API_KEY = "c933f15065e54a7b9d8908b084d72de1";
+
+async function loadStock(symbol) {
+  if (!symbol) {
+    alert("Please enter a symbol like NSE:RELIANCE");
+    return;
+  }
+
+  // Embed TradingView chart iframe
+  const chartContainer = document.getElementById("chartContainer");
+  chartContainer.innerHTML = `
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_${Date.now()}&symbol=${encodeURIComponent(symbol)}&interval=1&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3f6&theme=light&studies=[]&hideideas=1"
+      allowtransparency="true"
+      scrolling="no"
+      allowfullscreen="true">
+    </iframe>
+  `;
+
+  // Fetch company info
+  const infoDiv = document.getElementById("infoContent");
+  infoDiv.innerHTML = "<em>Loading company info...</em>";
+
+  try {
+    const res = await fetch(`https://api.twelvedata.com/fundamental?symbol=${symbol}&apikey=${API_KEY}`);
+    const data = await res.json();
+
+    if (data.status === "error" || !data.name) {
+      infoDiv.innerHTML = `<span style='color:red;'>${data.message || "No data found for " + symbol}</span>`;
+    } else {
+      infoDiv.innerHTML = `
+        <p><b>Name:</b> ${data.name}</p>
+        <p><b>Exchange:</b> ${data.exchange}</p>
+        <p><b>Sector:</b> ${data.sector}</p>
+        <p><b>Market Cap:</b> ${data.market_cap}</p>
+        <p><b>P/E Ratio:</b> ${data.pe_ratio}</p>
+        <p><b>Dividend Yield:</b> ${data.dividend_yield}</p>
+      `;
+    }
+  } catch (err) {
+    infoDiv.innerHTML = "⚠️ Error loading company info";
+  }
+}
+
+document.getElementById("loadBtn").addEventListener("click", () => {
+  const symbol = document.getElementById("symbolInput").value.trim();
+  loadStock(symbol);
+});
+
+document.getElementById("demoBtn").addEventListener("click", () => {
+  document.getElementById("symbolInput").value = "NSE:RELIANCE";
+  loadStock("NSE:RELIANCE");
+});
+</script>
+
+</body>
+</html>
